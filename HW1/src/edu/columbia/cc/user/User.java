@@ -60,8 +60,4 @@ public class User {
 	public void setVm(VirtualMachine vm) {
 		this.vm = vm;
 	}
-
-	
-
-
 }

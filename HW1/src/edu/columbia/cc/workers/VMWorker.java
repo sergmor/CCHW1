@@ -3,11 +3,10 @@ package edu.columbia.cc.workers;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
-import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.s3.AmazonS3Client;
 
 import edu.columbia.cc.platform.Action;
 import edu.columbia.cc.user.User;
@@ -19,6 +18,7 @@ public class VMWorker implements Callable<User> {
 	private Ec2Worker ec2 = null;
 	private EbsWorker ebs = null;
 	private AmazonEC2Client cloud = null;
+	private AmazonS3Client s3 = null;
 	
 	public VMWorker() {}
 	
@@ -46,10 +46,12 @@ public class VMWorker implements Callable<User> {
 		
 		AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
 		this.cloud  = new AmazonEC2Client(credentialsProvider);
+		this.s3 = new AmazonS3Client(credentialsProvider);
 		
 		this.ec2 = new Ec2Worker()
 						.withUser(user)
-						.withCloud(cloud);
+						.withCloud(cloud)
+						.withS3(s3);
 
 		User tempUser = null;
 		System.out.println("Trying to create VM with credentials" + credentialsProvider.toString() );

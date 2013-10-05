@@ -1,10 +1,14 @@
 package edu.columbia.cc.workers;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +43,10 @@ import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Snapshot;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
@@ -50,6 +58,7 @@ import edu.columbia.cc.user.User;
 public class Ec2Worker
 {
 	private AmazonEC2Client cloud = null;
+	private AmazonS3Client s3 = null;
 	private User user = null;
 	
 	public Ec2Worker() {}
@@ -66,12 +75,19 @@ public class Ec2Worker
 		return this;
 	}
 	
-	public User processCreateRequest()
+	public Ec2Worker withS3(AmazonS3Client s3)
+	{
+		this.s3 = s3;
+		return this;
+	}
+	
+	public User processCreateRequest() throws IOException
 	{
 		createKeyPair();
 		createSecurityGroup();
 		addRulesToSecurityGroup();
 		createInstance();
+		createS3Bucket();
 		createAndAttachExtraVolume();
 		
 		System.out.println("\n\nDone creating new instance.");
@@ -79,9 +95,10 @@ public class Ec2Worker
 		return this.user;
 	}
 	
-	public User processRelaunchRequest()
+	public User processRelaunchRequest() throws IOException
 	{
 		createInstance();
+		createS3Bucket();
 		deregisterExistingImage();
 		deletePrimarySnapshot();
 		attachExtraVolume();
@@ -377,6 +394,7 @@ public class Ec2Worker
 				requestedInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
 				if (requestedInstance.getState().getName().equalsIgnoreCase(InstanceStateName.Running.name()))
 				{
+					System.out.println(requestedInstance.getState().getName());
 					break;
 				}
 				else
@@ -409,15 +427,20 @@ public class Ec2Worker
 		boolean isInitialized = false;
 		while(!isInitialized) {
 			isInitialized = true;
-				try {
+				try
+				{
 					checkLogin(this.user.getKeyName()+".pem");
-				} catch (IOException e) {
+				}
+				catch (IOException e)
+				{
 					// There's something wrong with key file
 					e.printStackTrace();
 					isInitialized = false;
-				} catch (JSchException e) {
+				}
+				catch (JSchException e)
+				{
 					// The machine is not initialized yet
-					e.printStackTrace();
+					System.out.println("Still unable to connect.");
 					System.out.println("Sleeping for 10s ...");
 					isInitialized = false;
 					try{Thread.sleep(10 * 1000);}catch(InterruptedException e1){e1.printStackTrace();}
@@ -470,6 +493,7 @@ public class Ec2Worker
 				requestedInstance = describeInstancesResult.getReservations().get(0).getInstances().get(0);
 				if (requestedInstance.getState().getName().equalsIgnoreCase(InstanceStateName.Terminated.name()))
 				{
+					System.out.println(requestedInstance.getState().getName());
 					break;
 				}
 				else
@@ -515,7 +539,7 @@ public class Ec2Worker
 				String state = describeImagesResult.getImages().get(0).getState();
 				if (state.equalsIgnoreCase(ImageState.Available.name()))
 				{
-					System.out.println("Available.");
+					System.out.println(state);
 					break;
 				}
 				else
@@ -548,7 +572,7 @@ public class Ec2Worker
        	//enter your own EC2 instance IP here
        	Session session=jsch.getSession("ec2-user", this.user.getIp(), 22);
 
-       	System.out.println("attempting to conncect!");
+       	System.out.println("Attempting to conncect ...");
        	
        	session.connect();
        	System.out.println("Connected");
@@ -580,6 +604,54 @@ public class Ec2Worker
             session.disconnect();
           
        }
+	
+	private void createS3Bucket() throws IOException
+	{
+		String userId = this.user.getUserid();
+		String bucketName = userId + "_bucket";
+		String bucketKeyName = userId + "_bucket_key";
+		String dummyData = "dummy-data";
+		
+		try
+		{
+			S3Object object = s3.getObject(new GetObjectRequest(this.user.getBucketName(), bucketKeyName));
+			if (object != null)
+				{
+					//set value , Use Instance ID to create the file name
+			    	File file = File.createTempFile(userId, ".txt");
+			    	file.deleteOnExit();
+			    	Writer writer = new OutputStreamWriter(new FileOutputStream(file));
+			    	writer.write(dummyData);
+			    	writer.close();
+			    
+			    	//put object - bucket, key, value(file) 
+			    	s3.putObject(new PutObjectRequest(bucketName, bucketKeyName, file));            	
+				}
+			else 
+				{	            		           
+					//create bucket
+					s3.createBucket(bucketName);	                      
+			
+					//set value
+					File file = File.createTempFile(userId, ".txt");
+					file.deleteOnExit();
+					Writer writer = new OutputStreamWriter(new FileOutputStream(file));
+					writer.write(dummyData);
+					writer.close();
+			
+					//put object - bucket, key, value(file)
+					s3.putObject(new PutObjectRequest(bucketName, bucketKeyName, file));	            	           
+				}
+		}
+		catch (AmazonServiceException e)
+		{
+			e.printStackTrace();
+		}
+		catch (AmazonClientException e)
+		{
+			e.printStackTrace();
+		}
+	}
 
 
 
@@ -589,6 +661,14 @@ public class Ec2Worker
 
 	public void setCloud(AmazonEC2Client cloud) {
 		this.cloud = cloud;
+	}
+
+	public AmazonS3Client getS3() {
+		return s3;
+	}
+
+	public void setS3(AmazonS3Client s3) {
+		this.s3 = s3;
 	}
 
 	public User getUser() {
