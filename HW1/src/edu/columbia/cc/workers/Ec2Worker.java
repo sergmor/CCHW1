@@ -2,9 +2,7 @@ package edu.columbia.cc.workers;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +39,6 @@ import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Snapshot;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 
-import edu.columbia.cc.user.Details;
 import edu.columbia.cc.user.User;
 
 public class Ec2Worker
@@ -63,39 +60,7 @@ public class Ec2Worker
 		return this;
 	}
 	
-	public User processLaunchRequest() throws FileNotFoundException, ClassNotFoundException, IOException
-	{
-		Details details = new Details();
-		User existingUser = details.retrieveDetails(this.user);
-		
-		if(existingUser == null)
-		{
-			createNewInstance();
-		}
-		else
-		{
-			this.user = existingUser;
-			createInstanceFromExistingAmi();
-		}
-		
-		return this.user;
-	}
-	
-	public User processDeleteRequest() throws FileNotFoundException, ClassNotFoundException, IOException
-	{
-		Details details = new Details();
-		User existingUser = details.retrieveDetails(this.user);
-		
-		this.user = existingUser;
-		
-		detachExtraVolume();
-		createPrimarySnapshot();
-		deleteInstance();
-		
-		return this.user;
-	}
-	
-	private void createNewInstance() throws FileNotFoundException, IOException
+	public User processCreateRequest()
 	{
 		createKeyPair();
 		createSecurityGroup();
@@ -103,7 +68,30 @@ public class Ec2Worker
 		createInstance();
 		createAndAttachExtraVolume();
 		
-		System.out.println("\n\nDone creating.");
+		System.out.println("\n\nDone creating new instance.");
+		
+		return this.user;
+	}
+	
+	public User processRelaunchRequest()
+	{
+		createInstance();
+		deregisterExistingImage();
+		deletePrimarySnapshot();
+		attachExtraVolume();
+		
+		System.out.println("\nDone restoring from existing AMI.");
+		return this.user;
+	}
+	
+	public User processDeleteRequest()
+	{
+		detachExtraVolume();
+		createPrimarySnapshot();
+		deleteInstance();
+		
+		System.out.println("\nDone deleting instance.");
+		return this.user;
 	}
 	
 	private void createAndAttachExtraVolume()
@@ -140,16 +128,6 @@ public class Ec2Worker
 		{
 			e.printStackTrace();
 		}
-	}
-	
-	private void createInstanceFromExistingAmi() throws FileNotFoundException, IOException
-	{
-		createInstance();
-		deregisterExistingImage();
-		deletePrimarySnapshot();
-		attachExtraVolume();
-		
-		System.out.println("\nDone restoring from existing AMI.");
 	}
 	
 	public void deregisterExistingImage()
