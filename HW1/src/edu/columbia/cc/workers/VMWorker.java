@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 
@@ -38,18 +40,24 @@ public class VMWorker implements Callable<User> {
 
 	public void checkCommand() throws InterruptedException, IOException
 	{
-		AWSCredentials awsCredentials = new PropertiesCredentials(
+		/*AWSCredentials awsCredentials = new PropertiesCredentials(
    			 this.getClass().getResourceAsStream("AwsCredentials.properties"));
+		this.cloud  = new AmazonEC2Client(awsCredentials);*/
 		
-		this.cloud  = new AmazonEC2Client(awsCredentials);
+		AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
+		this.cloud  = new AmazonEC2Client(credentialsProvider);
+		
 		this.ec2 = new Ec2Worker()
 						.withUser(user)
 						.withCloud(cloud);
 
 		User tempUser = null;
+		System.out.println("Trying to create VM with credentials" + credentialsProvider.toString() );
 		if(command.equals(Action.CREATE))
 		{
+			System.out.println("attempting to create VM");
 			tempUser = ec2.processCreateRequest();
+			
 		}
 		else if (command.equals(Action.RELAUNCH))
 		{

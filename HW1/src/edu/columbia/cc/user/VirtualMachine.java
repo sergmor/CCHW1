@@ -8,7 +8,10 @@ public class VirtualMachine {
 	private String internalIp = "";
 	private String primaryVolumeId = "";
 	private String extraVolumeId = "";
+	private String zone = "";
 	
+
+
 	public VirtualMachine() {
 		
 	}
@@ -53,6 +56,12 @@ public class VirtualMachine {
 		this.extraVolumeId = volumeId;
 	}
 	
-	
+	public String getZone() {
+		return zone;
+	}
+
+	public void setZone(String zone) {
+		this.zone = zone;
+	}
 
 }

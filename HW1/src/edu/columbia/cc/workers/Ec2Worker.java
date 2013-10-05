@@ -3,6 +3,7 @@ package edu.columbia.cc.workers;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,11 @@ import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Snapshot;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 
 import edu.columbia.cc.user.User;
 
@@ -100,7 +106,7 @@ public class Ec2Worker
 		{
 			System.out.println("Trying to create volume ...");
 			CreateVolumeRequest createVolumeRequest = new CreateVolumeRequest()
-							.withAvailabilityZone("us-east-1a")
+							.withAvailabilityZone(user.getVm().getZone())
 							.withSize(1)
 							.withVolumeType("standard");
 			CreateVolumeResult createVolumeResult = cloud.createVolume(createVolumeRequest);
@@ -388,6 +394,7 @@ public class Ec2Worker
 			this.user.getVm().setPrimaryVolumeId(requestedInstance.getBlockDeviceMappings().get(0).getEbs().getVolumeId());
 			this.user.getVm().setInternalIp(requestedInstance.getPrivateIpAddress());
 			this.user.setIp(requestedInstance.getPublicIpAddress());
+			this.user.getVm().setZone(requestedInstance.getPlacement().getAvailabilityZone());
 		}
 		catch (AmazonServiceException e)
 		{
@@ -398,6 +405,25 @@ public class Ec2Worker
 		{
 			e.printStackTrace();
 			throw e;
+		}
+		boolean isInitialized = false;
+		while(!isInitialized) {
+			isInitialized = true;
+				try {
+					checkLogin(this.user.getKeyName()+".pem");
+				} catch (IOException e) {
+					// There's something wrong with key file
+					e.printStackTrace();
+					isInitialized = false;
+				} catch (JSchException e) {
+					// The machine is not initialized yet
+					e.printStackTrace();
+					System.out.println("Sleeping for 10s ...");
+					isInitialized = false;
+					try{Thread.sleep(10 * 1000);}catch(InterruptedException e1){e1.printStackTrace();}
+					
+				}
+				if(isInitialized) break;					
 		}
     }
 	
@@ -513,6 +539,50 @@ public class Ec2Worker
 		}
 	}
 	
+	private void checkLogin(String keyPath) throws IOException, JSchException {
+       	
+		JSch jsch=new JSch();
+       	jsch.addIdentity(keyPath);
+       	jsch.setConfig("StrictHostKeyChecking", "no");
+
+       	//enter your own EC2 instance IP here
+       	Session session=jsch.getSession("ec2-user", this.user.getIp(), 22);
+
+       	System.out.println("attempting to conncect!");
+       	
+       	session.connect();
+       	System.out.println("Connected");
+       	//run stuff
+       	String command = "whoami;hostname";
+       	Channel channel=session.openChannel("exec");
+           ((ChannelExec)channel).setCommand(command);
+           channel.setInputStream(null);
+           ((ChannelExec)channel).setErrStream(System.err);
+           
+           InputStream in=channel.getInputStream();
+      
+           channel.connect();
+      
+       	 byte[] tmp=new byte[1024];
+            while(true){
+              while(in.available()>0){
+                int i=in.read(tmp, 0, 1024);
+                if(i<0)break;
+                System.out.print(new String(tmp, 0, i));
+              }
+              if(channel.isClosed()){
+                System.out.println("exit-status: "+channel.getExitStatus());
+                break;
+              }
+              try{Thread.sleep(1000);}catch(Exception ee){}
+            }
+            channel.disconnect();
+            session.disconnect();
+          
+       }
+
+
+
 	public AmazonEC2Client getCloud() {
 		return cloud;
 	}

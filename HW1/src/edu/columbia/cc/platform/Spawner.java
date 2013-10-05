@@ -30,10 +30,6 @@ public enum Spawner {
 	private ScheduledExecutorService beat = Executors.newScheduledThreadPool(1);
 	private Map<Long,User> users = new HashMap<Long, User>(); 
 	private Map<String,Future<User>> usersInProgress = new HashMap<String, Future<User>>();
-	private VMWorker ec2Worker = new VMWorker(); 
-	
-	 
-	
 	
 	
 	/**
@@ -44,17 +40,17 @@ public enum Spawner {
 	 * @throws ExecutionException
 	 */
 	public void commissionVM(User cUser) throws InterruptedException, ExecutionException {
-		
+		VMWorker ec2Worker = new VMWorker(); 
 		ec2Worker.setCommand(Action.CREATE);
 		ec2Worker.setUser(cUser);
 		Future<User> nUser = chief.submit(ec2Worker);
-		String id = Long.toString(cUser.getId()) + Action.CREATE.toString();
+		String id = Long.toString(cUser.getId()) +":"+ Action.CREATE.toString();
 		usersInProgress.put(id, nUser);
 		
 	}
 	
 	public void decommissionVM(User cUser) throws InterruptedException, ExecutionException {
-		
+		VMWorker ec2Worker = new VMWorker();
 		ec2Worker.setCommand(Action.DELETE);
 		ec2Worker.setUser(cUser);
 		Future<User> nUser = chief.submit(ec2Worker);		
@@ -63,10 +59,11 @@ public enum Spawner {
 	}
 	
 	public void updateVM(User cUser) {
+		VMWorker ec2Worker = new VMWorker();
 		ec2Worker.setCommand(Action.UPDATE);
 		ec2Worker.setUser(cUser);
 		Future<User> nUser = chief.submit(ec2Worker);		
-		String id = Long.toString(cUser.getId()) +":"+ Action.DELETE.toString();
+		String id = Long.toString(cUser.getId()) +":"+ Action.UPDATE.toString();
 		usersInProgress.put(id, nUser);	
 	}
 	
