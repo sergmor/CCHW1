@@ -7,7 +7,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import edu.columbia.cc.platform.Action;
 import edu.columbia.cc.user.User;
 
-public class VMWorker implements Callable<Object> {
+public class VMWorker implements Callable<User> {
 	
 	private User user = null;
 	private Action command = null;
@@ -48,10 +48,10 @@ public class VMWorker implements Callable<Object> {
 	}
 
 	@Override
-	public Object call() throws Exception {
+	public User call() throws Exception {
 		
 		checkCommand();
-		return null;
+		return user;
 	}
 
 }
