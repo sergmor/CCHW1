@@ -1,16 +1,14 @@
 package edu.columbia.cc.user;
 
-import edu.columbia.cc.user.VirtualMachine;
 
 public class User {
 	
 	private long id = Long.MIN_VALUE;
 	private String userid = ""; 
-	private String key = "";
+	private String keyName = "";
 	private String ami_id = "";
-	private String serurityGroup = "";
+	private String securityGroupName = "";
 	private String ip = "";
-	private String volumeId = "";
 	private VirtualMachine vm = null;
 	
 	public User() {
@@ -28,23 +26,26 @@ public class User {
 	public void setUserid(String userid) {
 		this.userid = userid;
 	}
-	public String getKey() {
-		return key;
+	
+	public String getKeyName() {
+		return keyName;
 	}
-	public void setKey(String key) {
-		this.key = key;
+
+	public void setKeyName(String keyName) {
+		this.keyName = keyName;
 	}
+
 	public String getAmi_id() {
 		return ami_id;
 	}
 	public void setAmi_id(String ami_id) {
 		this.ami_id = ami_id;
 	}
-	public String getSerurityGroup() {
-		return serurityGroup;
+	public String getSecurityGroupName() {
+		return securityGroupName;
 	}
-	public void setSerurityGroup(String serurityGroup) {
-		this.serurityGroup = serurityGroup;
+	public void setSecurityGroupName(String securityGroup) {
+		this.securityGroupName = securityGroup;
 	}
 	public String getIp() {
 		return ip;
@@ -52,12 +53,7 @@ public class User {
 	public void setIp(String ip) {
 		this.ip = ip;
 	}
-	public String getVolumeId() {
-		return volumeId;
-	}
-	public void setVolumeId(String volumeId) {
-		this.volumeId = volumeId;
-	}
+
 	public VirtualMachine getVm() {
 		return vm;
 	}

@@ -1,10 +1,13 @@
 package edu.columbia.cc.user;
 
+
 public class VirtualMachine {
 
 	private String instanceId = "";
+	private String instanceType = "";
 	private String internalIp = "";
-	private String volumeId = "";
+	private String primaryVolumeId = "";
+	private String extraVolumeId = "";
 	
 	public VirtualMachine() {
 		
@@ -18,6 +21,14 @@ public class VirtualMachine {
 		this.instanceId = instanceId;
 	}
 
+	public String getInstanceType() {
+		return instanceType;
+	}
+
+	public void setInstanceType(String instanceType) {
+		this.instanceType = instanceType;
+	}
+
 	public String getInternalIp() {
 		return internalIp;
 	}
@@ -26,12 +37,20 @@ public class VirtualMachine {
 		this.internalIp = internalIp;
 	}
 
-	public String getVolumeId() {
-		return volumeId;
+	public String getPrimaryVolumeId() {
+		return primaryVolumeId;
 	}
 
-	public void setVolumeId(String volumeId) {
-		this.volumeId = volumeId;
+	public void setPrimaryVolumeId(String primaryVolumeId) {
+		this.primaryVolumeId = primaryVolumeId;
+	}
+
+	public String getExtraVolumeId() {
+		return extraVolumeId;
+	}
+
+	public void setExtraVolumeId(String volumeId) {
+		this.extraVolumeId = volumeId;
 	}
 	
 	
