@@ -43,9 +43,31 @@ public class VMWorker implements Callable<User> {
 		this.command = command;
 	}
 
-	public void checkCommand() {
-		//Switch if-else for command
+	public void checkCommand() throws InterruptedException {
+		if(command.equals(Action.CREATE)){
+			createVM();
+		}
+		else if(command.equals(Action.DELETE)) {
+			deleteVM();
+		}
 	}
+
+	private void deleteVM() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
+	private void createVM() throws InterruptedException {
+		
+		System.out.println("Executing on thread "+Thread.currentThread().getId());
+		System.out.println("Will create a VM for user "+ user.getId());
+		Thread.sleep(100);
+		System.out.println("Created a VM for user "+ user.getId());
+	}
+
+
 
 	@Override
 	public User call() throws Exception {
