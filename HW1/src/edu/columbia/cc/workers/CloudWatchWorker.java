@@ -8,27 +8,35 @@ import java.util.List;
 import java.util.TimeZone;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.CreateLaunchConfigurationRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.AllocateAddressResult;
-import com.amazonaws.services.ec2.model.AssociateAddressRequest;
-import com.amazonaws.services.ec2.model.DisassociateAddressRequest;
+import com.amazonaws.services.cloudwatch.model.PutMetricAlarmRequest;
+
+import edu.columbia.cc.user.User;
 
 public class CloudWatchWorker {
 	
 	private Double averageCPU = 0.0;
+	private String stop = "arn:aws:automate:us-east-1:ec2:stop";
+	private String stopTemplate = "arn:aws:automate:SITE:ec2:stop";
+	private String terminate = "arn:aws:automate:us-east-1:ec2:terminate";
+	private String terminateTemplate = "arn:aws:automate:SITE:ec2:terminate";
+	
 
 	public double monitorUtil (String insId) throws IOException
 	{
 		try {
-		AWSCredentials credentials = new PropertiesCredentials( CloudWatchWorker.class.getResourceAsStream("AwsCredentials.properties"));
+		//AWSCredentials credentials = new PropertiesCredentials( CloudWatchWorker.class.getResourceAsStream("AwsCredentials.properties"));
 		
 		/*********************************************
  		*  	#1 Create Amazon Client object
@@ -44,7 +52,8 @@ public class CloudWatchWorker {
 		 *********************************/
 		
 		//create CloudWatch client
-		AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient(credentials) ;
+ 	    AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
+		AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient(credentialsProvider) ;
 		
 		//create request message
 		GetMetricStatisticsRequest statRequest = new GetMetricStatisticsRequest();
@@ -85,6 +94,24 @@ public class CloudWatchWorker {
 			averageCPU = data.getAverage();
 			System.out.println("Average CPU utlilization for last 10 minutes: "+averageCPU);
 		}    
+		List<String> actions = new ArrayList<String>();
+		actions.add(stop);
+		//actions.add("");
+		
+		PutMetricAlarmRequest defaultAlarm = new PutMetricAlarmRequest()
+												.withNamespace("AWS/EC2")
+												.withMetricName("CPUUtilization")
+												.withDimensions(dimensions)
+												.withPeriod(300)
+												.withStatistic("Average")
+												.withAlarmName("Stop-EZ2-Instance")
+												.withComparisonOperator("LessThanThreshold")
+												.withThreshold(10.0)
+												.withEvaluationPeriods(1)												
+												.withActionsEnabled(true)
+												.withAlarmActions(actions);
+		System.out.println("Will try to create alarm");
+		cloudWatch.putMetricAlarm(defaultAlarm);
  			
 		}   catch (AmazonServiceException ase) {
 		    System.out.println("Caught Exception: " + ase.getMessage());
@@ -96,4 +123,75 @@ public class CloudWatchWorker {
 		return averageCPU;
 	}
 
+	public void setupAutoScale(User cUser) {
+		AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
+		AmazonAutoScalingClient autoScaling = new AmazonAutoScalingClient(credentialsProvider);
+		AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient(credentialsProvider);
+		CreateLaunchConfigurationRequest confRequest = new CreateLaunchConfigurationRequest()
+														.withLaunchConfigurationName(cUser.getUserid())
+														.withImageId(cUser.getAmi_id())
+														.withInstanceType(cUser.getVm().getInstanceType());
+	System.out.println("About to create LaunchConf");
+		autoScaling.createLaunchConfiguration(confRequest);
+		
+		CreateAutoScalingGroupRequest groupRequest = new CreateAutoScalingGroupRequest()
+														.withAutoScalingGroupName(cUser.getUserid())
+														.withLaunchConfigurationName(cUser.getUserid())
+														.withAvailabilityZones("us-east-1b")
+														.withMaxSize(2)
+														.withMinSize(1);
+	System.out.println("About to create groupRequest");
+		autoScaling.createAutoScalingGroup(groupRequest);
+		PutScalingPolicyRequest upPolicy = new PutScalingPolicyRequest()
+											.withPolicyName(cUser.getId()+"_upScale")
+											.withAutoScalingGroupName(cUser.getUserid())
+											.withScalingAdjustment(1)
+											.withAdjustmentType("ChangeInCapacity");
+				
+		PutScalingPolicyRequest downPolicy = new PutScalingPolicyRequest()
+											.withPolicyName(cUser.getId()+"_inScale")
+											.withAutoScalingGroupName(cUser.getUserid())
+											.withScalingAdjustment(-1)
+											.withAdjustmentType("ChangeInCapacity");
+		PutScalingPolicyResult upReturn = autoScaling.putScalingPolicy(upPolicy);
+	System.out.println(upReturn.getPolicyARN());
+		PutScalingPolicyResult downReturn = autoScaling.putScalingPolicy(downPolicy);
+	System.out.println(downReturn.getPolicyARN());
+	
+		PutMetricAlarmRequest upAlarm = new PutMetricAlarmRequest()
+											.withAlarmName("AddCapacity")
+											.withMetricName("CPUUtilization")
+											.withNamespace("AWS/EC2")
+											.withStatistic("Average")
+											.withPeriod(120)
+											.withThreshold(50.0)
+											.withComparisonOperator("GreaterThanOrEqualToThreshold")
+											.withDimensions(new Dimension().withName("AutoScalingGroupName=").withValue(cUser.getUserid()))
+											.withEvaluationPeriods(1)												
+											.withActionsEnabled(true)
+											.withAlarmActions(upReturn.getPolicyARN());
+	System.out.println("Will try to create alarm");
+		cloudWatch.putMetricAlarm(upAlarm);
+		
+		PutMetricAlarmRequest downAlarm = new PutMetricAlarmRequest()
+											.withAlarmName("RemoveCapacity")
+											.withMetricName("CPUUtilization")
+											.withNamespace("AWS/EC2")
+											.withStatistic("Average")
+											.withPeriod(120)
+											.withThreshold(30.0)
+											.withComparisonOperator("GreaterThanOrEqualToThreshold")
+											.withDimensions(new Dimension().withName("AutoScalingGroupName=").withValue(cUser.getUserid()))
+											.withEvaluationPeriods(1)												
+											.withActionsEnabled(true)
+											.withAlarmActions(downReturn.getPolicyARN());
+	System.out.println("Will try to create alarm");
+		cloudWatch.putMetricAlarm(downAlarm);
+	}
+	
+	
+	
+	
 }
+
+
