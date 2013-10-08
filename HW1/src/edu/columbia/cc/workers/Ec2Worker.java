@@ -1,11 +1,13 @@
 package edu.columbia.cc.workers;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -98,7 +100,7 @@ public class Ec2Worker
 	public User processRelaunchRequest() throws IOException
 	{
 		createInstance();
-		createS3Bucket();
+		updateS3Bucket();
 		deregisterExistingImage();
 		deletePrimarySnapshot();
 		attachExtraVolume();
@@ -572,7 +574,7 @@ public class Ec2Worker
        	//enter your own EC2 instance IP here
        	Session session=jsch.getSession("ec2-user", this.user.getIp(), 22);
 
-       	System.out.println("Attempting to conncect ...");
+       	System.out.println("Attempting to connect ...");
        	
        	session.connect();
        	System.out.println("Connected");
@@ -608,40 +610,35 @@ public class Ec2Worker
 	private void createS3Bucket() throws IOException
 	{
 		String userId = this.user.getUserid();
-		String bucketName = userId + "_bucket";
-		String bucketKeyName = userId + "_bucket_key";
+		String bucketName = userId + "-bucket";
+		String bucketKeyName = userId + "-bucket-key";
 		String dummyData = "dummy-data";
 		
 		try
-		{
-			S3Object object = s3.getObject(new GetObjectRequest(this.user.getBucketName(), bucketKeyName));
-			if (object != null)
-				{
-					//set value , Use Instance ID to create the file name
-			    	File file = File.createTempFile(userId, ".txt");
-			    	file.deleteOnExit();
-			    	Writer writer = new OutputStreamWriter(new FileOutputStream(file));
-			    	writer.write(dummyData);
-			    	writer.close();
-			    
-			    	//put object - bucket, key, value(file) 
-			    	s3.putObject(new PutObjectRequest(bucketName, bucketKeyName, file));            	
-				}
-			else 
-				{	            		           
-					//create bucket
-					s3.createBucket(bucketName);	                      
+		{	    
+	        //create bucket
+			s3.createBucket(bucketName);	                      
 			
-					//set value
-					File file = File.createTempFile(userId, ".txt");
-					file.deleteOnExit();
-					Writer writer = new OutputStreamWriter(new FileOutputStream(file));
-					writer.write(dummyData);
-					writer.close();
+			//set value
+			File file = File.createTempFile(userId, ".txt");
+			file.deleteOnExit();
+			Writer writer = new OutputStreamWriter(new FileOutputStream(file));
+			writer.write(dummyData);
+			writer.close();
 			
-					//put object - bucket, key, value(file)
-					s3.putObject(new PutObjectRequest(bucketName, bucketKeyName, file));	            	           
-				}
+			//put object - bucket, key, value(file)
+			s3.putObject(new PutObjectRequest(bucketName, bucketKeyName, file));
+			
+            //get object
+            System.out.println("Reading data from S3....");				
+            S3Object object = s3.getObject(new GetObjectRequest(bucketName, bucketKeyName));
+            BufferedReader reader = new BufferedReader(
+            	    new InputStreamReader(object.getObjectContent()));
+            String data = null;
+            while ((data = reader.readLine()) != null)
+            {
+                System.out.println(data);
+            }
 		}
 		catch (AmazonServiceException e)
 		{
@@ -654,6 +651,47 @@ public class Ec2Worker
 	}
 
 
+	private void updateS3Bucket() throws IOException
+	{
+		String userId = this.user.getUserid();
+		String bucketName = userId + "-bucket";
+		String bucketKeyName = userId + "-bucket-key";
+		String dummyData = "dummy-data";
+		
+		try
+		{	    	                      			
+			//set value
+			File file = File.createTempFile(userId, ".txt");
+			file.deleteOnExit();
+			Writer writer = new OutputStreamWriter(new FileOutputStream(file));
+			writer.write(dummyData);
+			writer.close();
+			
+			//put object - bucket, key, value(file)
+			s3.putObject(new PutObjectRequest(bucketName, bucketKeyName, file));
+			
+            //get object
+            System.out.println("Reading data from S3....");				
+            S3Object object = s3.getObject(new GetObjectRequest(bucketName, bucketKeyName));
+            BufferedReader reader = new BufferedReader(
+            	    new InputStreamReader(object.getObjectContent()));
+            String data = null;
+            while ((data = reader.readLine()) != null)
+            {
+                System.out.println(data);
+            }
+			
+		}
+		catch (AmazonServiceException e)
+		{
+			e.printStackTrace();
+		}
+		catch (AmazonClientException e)
+		{
+			e.printStackTrace();
+		}
+	}	
+	
 
 	public AmazonEC2Client getCloud() {
 		return cloud;
