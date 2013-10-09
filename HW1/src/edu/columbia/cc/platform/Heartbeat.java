@@ -12,8 +12,11 @@ import edu.columbia.cc.user.User;
 public class Heartbeat implements Runnable {
 
 	
+	
 	private Map<String,Future<User>> usersInProgress = new HashMap<String, Future<User>>();
+	
 	private Map<String,User> usersFinished= new HashMap<String, User>();
+	
 	@Override
 	public void run() {
 		Set<String> keys = usersInProgress.keySet();
@@ -31,8 +34,13 @@ public class Heartbeat implements Runnable {
 			
 			}
 		}
-		
+		checkCPU();
 
+	}
+
+	private void checkCPU() {
+		// Poll all metrics and callback to Spawner
+		
 	}
 
 	public Map<String, Future<User>> getUsersInProgress() {

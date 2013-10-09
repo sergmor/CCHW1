@@ -89,8 +89,8 @@ public class CloudWatchWorker {
 		}    
 		List<String> actions = new ArrayList<String>();
 		actions.add(stop);
-		//actions.add("");
 		
+		/*
 		PutMetricAlarmRequest defaultAlarm = new PutMetricAlarmRequest()
 												.withNamespace("AWS/EC2")
 												.withMetricName("CPUUtilization")
@@ -104,7 +104,7 @@ public class CloudWatchWorker {
 												.withActionsEnabled(true)
 												.withAlarmActions(actions);
 		System.out.println("Will try to create alarm");
-		cloudWatch.putMetricAlarm(defaultAlarm);
+		cloudWatch.putMetricAlarm(defaultAlarm);*/
  			
 		}   catch (AmazonServiceException ase) {
 		    System.out.println("Caught Exception: " + ase.getMessage());

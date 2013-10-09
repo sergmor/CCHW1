@@ -1,5 +1,8 @@
 package edu.columbia.cc.workers;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
@@ -10,6 +13,11 @@ import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.PutMetricAlarmRequest;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerListenersRequest;
+import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerRequest;
+import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerResult;
+import com.amazonaws.services.elasticloadbalancing.model.Listener;
 
 import edu.columbia.cc.user.User;
 
@@ -18,6 +26,7 @@ public class AutoscaleWorker {
 	private static final double UP_THRESHOLD=50;
 	private static final double DOWN_THRESHOLD=10;
 	private static final int PERIOD=120;
+	
 
 	public void setupAutoScale(User cUser) {
 		//Create credentials & clients
@@ -89,7 +98,36 @@ public class AutoscaleWorker {
 	System.out.println("Will try to create alarm");
 		cloudWatch.putMetricAlarm(downAlarm);
 	}
+	/*
+	public String createLoadBalancer(User cUser) {
+		String lbName = null;
+		AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
+		AmazonElasticLoadBalancingClient amazonElasticLoadBalancingClient = new AmazonElasticLoadBalancingClient(credentialsProvider);
+		
+		
+		//amazonElasticLoadBalancingClient.createLoadBalancer();		
+		Listener listener = new Listener()
+							.withProtocol("TCP")
+							.withInstancePort(22)
+							.withLoadBalancerPort(22);
+						
 	
+		Collection<Listener> endpoint = new ArrayList<Listener>();
+		endpoint.add(listener);
+		
+		CreateLoadBalancerListenersRequest balancerListenersRequest = new CreateLoadBalancerListenersRequest()
+																		.withLoadBalancerName(cUser.getAmi_id()+"_lb")
+																		.withListeners(endpoint);
+		CreateLoadBalancerRequest balancerRequest = new CreateLoadBalancerRequest()
+													.withLoadBalancerName(cUser.getAmi_id()+"_lb")
+													.withListeners(endpoint)
+													.withAvailabilityZones(cUser.getVm().getZone());
+	System.out.println("Trying to create LB");											
+		CreateLoadBalancerResult newLoadBalancer =  amazonElasticLoadBalancingClient.createLoadBalancer(balancerRequest);			
+		
+		return lbName = cUser.getAmi_id()+"_lb";
+	}
+	*/
 	
 	
 }
