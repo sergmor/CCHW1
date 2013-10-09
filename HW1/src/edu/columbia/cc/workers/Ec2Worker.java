@@ -17,6 +17,10 @@ import java.util.List;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.AllocateAddressRequest;
+import com.amazonaws.services.ec2.model.AllocateAddressResult;
+import com.amazonaws.services.ec2.model.AssociateAddressRequest;
+import com.amazonaws.services.ec2.model.AssociateAddressResult;
 import com.amazonaws.services.ec2.model.AttachVolumeRequest;
 import com.amazonaws.services.ec2.model.AuthorizeSecurityGroupIngressRequest;
 import com.amazonaws.services.ec2.model.CreateImageRequest;
@@ -89,6 +93,7 @@ public class Ec2Worker
 		createSecurityGroup();
 		addRulesToSecurityGroup();
 		createInstance();
+		createElasticIp();
 		createS3Bucket();
 		createAndAttachExtraVolume();
 		
@@ -412,8 +417,8 @@ public class Ec2Worker
 			/* Fill other details of the user object, using details from the new instance */
 			this.user.getVm().setInstanceId(instanceId);
 			this.user.getVm().setPrimaryVolumeId(requestedInstance.getBlockDeviceMappings().get(0).getEbs().getVolumeId());
-			this.user.getVm().setInternalIp(requestedInstance.getPrivateIpAddress());
-			this.user.setIp(requestedInstance.getPublicIpAddress());
+			this.user.getVm().setPublicIp(requestedInstance.getPrivateIpAddress());
+//			this.user.setIp(requestedInstance.getPublicIpAddress());
 			this.user.getVm().setZone(requestedInstance.getPlacement().getAvailabilityZone());
 		}
 		catch (AmazonServiceException e)
@@ -451,6 +456,37 @@ public class Ec2Worker
 				if(isInitialized) break;					
 		}
     }
+	
+	private void createElasticIp()
+	{
+		try
+		{
+			System.out.println("Trying to get an elastic IP for the instance ...");
+			AllocateAddressRequest allocateAddressRequest = new AllocateAddressRequest();
+			AllocateAddressResult allocateAddressResult = this.cloud.allocateAddress(allocateAddressRequest);
+			System.out.println("Request sent.");
+			
+			String elasticIp = allocateAddressResult.getPublicIp();
+			String instanceId = this.user.getVm().getInstanceId();
+			System.out.println("Elastic IP received in response : " + elasticIp);
+			
+			System.out.println("Trying to associate elastic IP '" + elasticIp + "' with instanceId '" + instanceId + "'");
+			AssociateAddressRequest associateAddressRequest = new AssociateAddressRequest(instanceId, elasticIp);
+			AssociateAddressResult associateAddressResult = this.cloud.associateAddress(associateAddressRequest);
+			System.out.println("Request sent.");
+			
+			this.user.setElasticIp(elasticIp);
+			System.out.println("Saved the elastic IP with the user object.");
+		}
+		catch (AmazonServiceException e)
+		{
+			e.printStackTrace();
+		}
+		catch (AmazonClientException e)
+		{
+			e.printStackTrace();
+		}
+	}
 	
 	private void detachExtraVolume()
 	{
@@ -572,7 +608,7 @@ public class Ec2Worker
        	jsch.setConfig("StrictHostKeyChecking", "no");
 
        	//enter your own EC2 instance IP here
-       	Session session=jsch.getSession("ec2-user", this.user.getIp(), 22);
+       	Session session=jsch.getSession("ec2-user", this.user.getElasticIp(), 22);
 
        	System.out.println("Attempting to connect ...");
        	

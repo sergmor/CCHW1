@@ -5,13 +5,11 @@ public class VirtualMachine {
 
 	private String instanceId = "";
 	private String instanceType = "";
-	private String internalIp = "";
+	private String publicIp = "";
 	private String primaryVolumeId = "";
 	private String extraVolumeId = "";
 	private String zone = "";
 	
-
-
 	public VirtualMachine() {
 		
 	}
@@ -32,12 +30,12 @@ public class VirtualMachine {
 		this.instanceType = instanceType;
 	}
 
-	public String getInternalIp() {
-		return internalIp;
+	public String getPublicIp() {
+		return publicIp;
 	}
 
-	public void setInternalIp(String internalIp) {
-		this.internalIp = internalIp;
+	public void setPublicIp(String internalIp) {
+		this.publicIp = internalIp;
 	}
 
 	public String getPrimaryVolumeId() {

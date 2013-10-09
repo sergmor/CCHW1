@@ -8,7 +8,7 @@ public class User {
 	private String keyName = "";
 	private String ami_id = "";
 	private String securityGroupName = "";
-	private String ip = "";
+	private String elasticIp = "";
 	private VirtualMachine vm = null;
 	
 	public User() {
@@ -47,11 +47,11 @@ public class User {
 	public void setSecurityGroupName(String securityGroup) {
 		this.securityGroupName = securityGroup;
 	}
-	public String getIp() {
-		return ip;
+	public String getElasticIp() {
+		return elasticIp;
 	}
-	public void setIp(String ip) {
-		this.ip = ip;
+	public void setElasticIp(String ip) {
+		this.elasticIp = ip;
 	}
 
 	public VirtualMachine getVm() {
