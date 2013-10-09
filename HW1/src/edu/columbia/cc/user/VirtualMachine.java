@@ -8,6 +8,7 @@ public class VirtualMachine {
 	private String publicIp = "";
 	private String primaryVolumeId = "";
 	private String extraVolumeId = "";
+	private String snapshotVolumeId = "";
 	private String zone = "";
 	
 	public VirtualMachine() {
@@ -54,6 +55,14 @@ public class VirtualMachine {
 		this.extraVolumeId = volumeId;
 	}
 	
+	public String getSnapshotVolumeId() {
+		return snapshotVolumeId;
+	}
+
+	public void setSnapshotVolumeId(String snapshotVolumeId) {
+		this.snapshotVolumeId = snapshotVolumeId;
+	}
+
 	public String getZone() {
 		return zone;
 	}

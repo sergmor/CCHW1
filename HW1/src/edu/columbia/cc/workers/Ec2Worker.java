@@ -161,7 +161,7 @@ public class Ec2Worker
 		}
 	}
 	
-	public void deregisterExistingImage()
+	private void deregisterExistingImage()
 	{
 		try
 		{
@@ -186,13 +186,13 @@ public class Ec2Worker
 	private void deletePrimarySnapshot()
 	{
 		String snapshotId = "";
-		String primaryVolumeId = this.user.getVm().getPrimaryVolumeId();
+		String snapshotVolumeId = this.user.getVm().getSnapshotVolumeId();
 		String status = "completed";
 		
 		try
 		{
 			Filter[] filters = new Filter[2];
-			filters[0] = new Filter().withName("volume-id").withValues(primaryVolumeId);
+			filters[0] = new Filter().withName("volume-id").withValues(snapshotVolumeId);
 			filters[1] = new Filter().withName("status").withValues(status);
 
 			DescribeSnapshotsRequest describeSnapshotsRequest = new DescribeSnapshotsRequest().withFilters(filters);
@@ -274,7 +274,7 @@ public class Ec2Worker
 		return null;
 	}
 	
-	public void savePrivateKeyFile(String str)
+	private void savePrivateKeyFile(String str)
     {
 		String privateKeyFileName = this.user.getKeyName()+".pem";
     	try
@@ -295,7 +295,7 @@ public class Ec2Worker
 		}
     }
 	
-	public void createSecurityGroup() throws AmazonServiceException
+	private void createSecurityGroup() throws AmazonServiceException
     {
 		/*Generate a unique securityGroupName.*/
 		String securityGroupName = this.user.getUserid() + "_group";
@@ -320,7 +320,7 @@ public class Ec2Worker
 		}
     }
 	
-	public void addRulesToSecurityGroup() throws AmazonServiceException
+	private void addRulesToSecurityGroup() throws AmazonServiceException
     {
     	String ipAddr = "0.0.0.0/0";
     	String securityGroupName = this.user.getSecurityGroupName();
@@ -601,6 +601,9 @@ public class Ec2Worker
 			}
 			
 			this.user.setAmi_id(imageId);
+			
+			String snapshotVolumeId = this.user.getVm().getPrimaryVolumeId();
+			this.user.getVm().setSnapshotVolumeId(snapshotVolumeId);
 			System.out.println("Done creating AMI with ID : " + imageId);
 		}
 		catch (AmazonServiceException e)
