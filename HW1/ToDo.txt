@@ -1,0 +1,14 @@
+Requirements:
+
+- Batch creation of machines for users start of day (95%)(50%)
+	- Persistent Elastic IP for users
+	- Persistent AMI per user
+	- Strage + S3 per user
+	Missing:
+		Elastic IP(95%)(0%)
+		LoadBalancing
+- Batch deletion of machines for users at end of day (95%)(50%)
+- Deletion based on monitoring (95%)(50%)
+- Elastic capacity for users over a threshold (95%)(50%)
+- Environment for admin + testing & persistence model. (5%)(0%) 
+
