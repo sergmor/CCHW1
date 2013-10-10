@@ -46,6 +46,7 @@ public class AutoscaleWorker {
 														.withAutoScalingGroupName(cUser.getUserid())
 														.withLaunchConfigurationName(cUser.getUserid())
 														.withAvailabilityZones(cUser.getVm().getZone())
+														.withLoadBalancerNames(cUser.getUserid()+"-lb")
 														.withMaxSize(2)
 														.withMinSize(1);
 	System.out.println("About to create groupRequest");
@@ -90,7 +91,7 @@ public class AutoscaleWorker {
 											.withStatistic("Average")
 											.withPeriod(PERIOD)
 											.withThreshold(DOWN_THRESHOLD)
-											.withComparisonOperator("GreaterThanOrEqualToThreshold")
+											.withComparisonOperator("LessThanOrEqualToThreshold")
 											.withDimensions(new Dimension().withName("AutoScalingGroupName=").withValue(cUser.getUserid()))
 											.withEvaluationPeriods(1)												
 											.withActionsEnabled(true)
@@ -98,7 +99,7 @@ public class AutoscaleWorker {
 	System.out.println("Will try to create alarm");
 		cloudWatch.putMetricAlarm(downAlarm);
 	}
-	/*
+	
 	public String createLoadBalancer(User cUser) {
 		String lbName = null;
 		AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
@@ -109,25 +110,25 @@ public class AutoscaleWorker {
 		Listener listener = new Listener()
 							.withProtocol("TCP")
 							.withInstancePort(22)
-							.withLoadBalancerPort(22);
+							.withLoadBalancerPort(1025);
 						
 	
 		Collection<Listener> endpoint = new ArrayList<Listener>();
 		endpoint.add(listener);
 		
 		CreateLoadBalancerListenersRequest balancerListenersRequest = new CreateLoadBalancerListenersRequest()
-																		.withLoadBalancerName(cUser.getAmi_id()+"_lb")
+																		.withLoadBalancerName(cUser.getUserid()+"-lb")
 																		.withListeners(endpoint);
 		CreateLoadBalancerRequest balancerRequest = new CreateLoadBalancerRequest()
-													.withLoadBalancerName(cUser.getAmi_id()+"_lb")
-													.withListeners(endpoint)
+													.withLoadBalancerName(cUser.getUserid()+"-lb")
+													.withListeners(endpoint)													
 													.withAvailabilityZones(cUser.getVm().getZone());
 	System.out.println("Trying to create LB");											
 		CreateLoadBalancerResult newLoadBalancer =  amazonElasticLoadBalancingClient.createLoadBalancer(balancerRequest);			
 		
-		return lbName = cUser.getAmi_id()+"_lb";
+		return lbName = cUser.getUserid()+"-lb";
 	}
-	*/
+	
 	
 	
 }
