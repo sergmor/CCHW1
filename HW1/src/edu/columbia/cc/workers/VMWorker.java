@@ -80,12 +80,12 @@ public class VMWorker implements Callable<User> {
 			{
 				tempUser = ec2.processRelaunchRequest();
 				
-				aw.setupAutoScale(tempUser);
+				//aw.setupAutoScale(tempUser);
 			}
 			else if(command.equals(Action.DELETE))
 			{
 				System.out.println("Attempting to remove alarm configuration ...");
-				aw.tearDownAutoScale(tempUser);
+				//aw.tearDownAutoScale(tempUser);
 				System.out.println("attempting to delete VM ...");
 				tempUser = ec2.processDeleteRequest();
 			}

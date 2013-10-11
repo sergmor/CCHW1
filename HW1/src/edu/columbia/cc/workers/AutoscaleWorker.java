@@ -73,8 +73,7 @@ System.out.println("About to create LaunchConf");
 															.withAvailabilityZones(cUser.getVm().getZone())
 															.withLoadBalancerNames(cUser.getUserid()+"-lb")
 															.withMaxSize(2)
-															.withMinSize(0)
-															.withDesiredCapacity(0);
+															.withMinSize(0);														;
 			
 System.out.println("About to create groupRequest");
 			autoScaling.createAutoScalingGroup(groupRequest);
@@ -105,7 +104,7 @@ System.out.println(downReturn.getPolicyARN());
 												.withThreshold(UP_THRESHOLD)
 												.withComparisonOperator("GreaterThanOrEqualToThreshold")
 												.withDimensions(new Dimension().withName("AutoScalingGroupName=").withValue(cUser.getUserid()))
-												.withEvaluationPeriods(2)												
+												.withEvaluationPeriods(1)												
 												.withActionsEnabled(true)
 												.withAlarmActions(upReturn.getPolicyARN());
 System.out.println("Will try to create alarm : " + upAlarm.getAlarmName());
@@ -168,9 +167,6 @@ System.out.println("Will try to create alarm : " + downAlarm.getAlarmName());
 	{
 		
 		try {
-			
-			
-			
 				System.out.println("Connected for user : " + cUser.getUserid());
 				
 			   	DescribeAutoScalingGroupsResult dpr = autoScaling.describeAutoScalingGroups();
