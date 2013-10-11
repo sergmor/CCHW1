@@ -19,6 +19,7 @@ public class Heartbeat implements Runnable {
 	
 	@Override
 	public void run() {
+		System.out.println("***HB");
 		this.usersInProgress = Spawner.INSTANCE.getUsersInProgress();		
 		Set<String> keys = usersInProgress.keySet();
 		for (Iterator<String> iterator = keys.iterator(); iterator.hasNext();) {
