@@ -22,10 +22,12 @@ public class AlarmTest {
 		temp.setUserid(Long.toString(temp.getId()));
 		VirtualMachine vm = new VirtualMachine();
 		vm.setInstanceType("t1.micro");
-		vm.setZone("us-east-1b");
+		vm.setZone("us-east-1a");
 		temp.setVm(vm);
-		temp.setAmi_id("ami-35792c5c");
-		temp.getVm().setInstanceId("i-aa9a3acc");
+		temp.setKeyName("12345_key");
+		temp.setAmi_id("ami-76f0061f");
+		temp.setSecurityGroupName("12345_group");
+		temp.getVm().setInstanceId("i-1e703c7a");
 		aw.createLoadBalancer(temp);
 		aw.setupAutoScale(temp);
 		

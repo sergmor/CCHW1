@@ -23,8 +23,8 @@ import edu.columbia.cc.user.User;
 
 public class AutoscaleWorker {
 	
-	private static final double UP_THRESHOLD=50;
-	private static final double DOWN_THRESHOLD=10;
+	private static final double UP_THRESHOLD=85;
+	private static final double DOWN_THRESHOLD=20;
 	private static final int PERIOD=120;
 	
 
@@ -38,6 +38,8 @@ public class AutoscaleWorker {
 		CreateLaunchConfigurationRequest confRequest = new CreateLaunchConfigurationRequest()
 														.withLaunchConfigurationName(cUser.getUserid())
 														.withImageId(cUser.getAmi_id())
+														.withSecurityGroups(cUser.getSecurityGroupName())
+														.withKeyName(cUser.getKeyName())
 														.withInstanceType(cUser.getVm().getInstanceType());
 	System.out.println("About to create LaunchConf");
 		autoScaling.createLaunchConfiguration(confRequest);
@@ -78,10 +80,10 @@ public class AutoscaleWorker {
 											.withThreshold(UP_THRESHOLD)
 											.withComparisonOperator("GreaterThanOrEqualToThreshold")
 											.withDimensions(new Dimension().withName("AutoScalingGroupName=").withValue(cUser.getUserid()))
-											.withEvaluationPeriods(1)												
+											.withEvaluationPeriods(2)												
 											.withActionsEnabled(true)
 											.withAlarmActions(upReturn.getPolicyARN());
-	System.out.println("Will try to create alarm");
+	System.out.println("Will try to create alarm : " + upAlarm.getAlarmName());
 		cloudWatch.putMetricAlarm(upAlarm);
 		
 		PutMetricAlarmRequest downAlarm = new PutMetricAlarmRequest()
@@ -96,7 +98,8 @@ public class AutoscaleWorker {
 											.withEvaluationPeriods(1)												
 											.withActionsEnabled(true)
 											.withAlarmActions(downReturn.getPolicyARN());
-	System.out.println("Will try to create alarm");
+		
+	System.out.println("Will try to create alarm : " + downAlarm.getAlarmName());
 		cloudWatch.putMetricAlarm(downAlarm);
 	}
 	
@@ -124,7 +127,7 @@ public class AutoscaleWorker {
 													.withListeners(endpoint)													
 													.withAvailabilityZones(cUser.getVm().getZone());
 	System.out.println("Trying to create LB");											
-		CreateLoadBalancerResult newLoadBalancer =  amazonElasticLoadBalancingClient.createLoadBalancer(balancerRequest);			
+		CreateLoadBalancerResult newLoadBalancer =  amazonElasticLoadBalancingClient.createLoadBalancer(balancerRequest);	
 		
 		return lbName = cUser.getUserid()+"-lb";
 	}
