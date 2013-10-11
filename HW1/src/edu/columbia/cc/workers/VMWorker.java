@@ -56,12 +56,12 @@ public class VMWorker implements Callable<User> {
 						.withS3(s3);
 
 		User tempUser = null;
-		System.out.println("Credentials" + credentialsProvider.toString() );
+		System.out.println("Credentials : " + credentialsProvider.toString() );
 		try
 		{
 			if(command.equals(Action.CREATE))
 			{
-				System.out.println("attempting to create VM");
+				System.out.println("attempting to create VM ...");
 				tempUser = ec2.processCreateRequest();
 				
 				aw.createLoadBalancer(tempUser);
@@ -72,12 +72,13 @@ public class VMWorker implements Callable<User> {
 			{
 				tempUser = ec2.processRelaunchRequest();
 				
-				aw.createLoadBalancer(tempUser);
 				aw.setupAutoScale(tempUser);
 			}
 			else if(command.equals(Action.DELETE))
 			{
-				System.out.println("attempting to delete VM");
+				System.out.println("Attempting to remove alarm configuration ...");
+				aw.tearDownAutoScale(tempUser);
+				System.out.println("attempting to delete VM ...");
 				tempUser = ec2.processDeleteRequest();
 			}
 		}

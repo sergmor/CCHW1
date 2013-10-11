@@ -207,7 +207,7 @@ public class Ec2Worker
 			Snapshot snapshot = describeSnapshotResult.getSnapshots().get(0);
 			snapshotId = snapshot.getSnapshotId();
 			
-			System.out.println("Trying to delete snapshot with snapshotId:" + snapshotId);
+			System.out.println("Trying to delete snapshot with snapshotId:" + snapshotId + " for user : " + this.user.getUserid());
 			DeleteSnapshotRequest deleteSnapshotRequest = new DeleteSnapshotRequest()
 												.withSnapshotId(snapshotId);
 			this.cloud.deleteSnapshot(deleteSnapshotRequest);
@@ -230,6 +230,14 @@ public class Ec2Worker
 		{
 			String instanceId = this.user.getVm().getInstanceId();
 			String extraVolumeId = this.user.getVm().getExtraVolumeId();
+			
+			try {
+				System.out.println("Sleeping for 15s before attaching extra volume " + extraVolumeId);
+				Thread.sleep(15 * 1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			System.out.println("Trying to attach volume to instance with instanceId: " + instanceId + " for user " + this.user.getUserid());
 			AttachVolumeRequest attachVolumeRequest = new AttachVolumeRequest();
@@ -578,7 +586,7 @@ public class Ec2Worker
 		{
 			String instanceId = this.user.getVm().getInstanceId();
 			String amiName = this.user.getUserid() + "_ami";
-			System.out.println("Attempting to create AMI out of instance with instanceId : ");
+			System.out.println("Attempting to create AMI out of instance with instanceId : " + instanceId);
 			CreateImageRequest createImageRequest = new CreateImageRequest()
 									.withInstanceId(instanceId)
 									.withName(amiName);

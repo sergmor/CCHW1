@@ -100,6 +100,7 @@ public enum Spawner {
 				else if (id.contains(Action.DELETE.toString())) {
 					//users.remove(user.getUserid());
 				}
+				System.out.println("***Spawner: Removing from map " + id);
 				usersInProgress.remove(id);
 			}
 		}
@@ -115,11 +116,7 @@ public enum Spawner {
 		Set<String> keys = users.keySet();
 		for (Iterator<String> iterator = keys.iterator(); iterator.hasNext();) {
 			String id = iterator.next();
-			this.decommissionVM(users.get(id));
-		}
-		Set<String> keysInProgress = usersInProgress.keySet();
-		for (Iterator<String> iterator = keysInProgress.iterator(); iterator.hasNext();) {
-			String id = iterator.next();
+			System.out.println("***Spawner: will decomission from final" + id);
 			this.decommissionVM(users.get(id));
 		}
 	}

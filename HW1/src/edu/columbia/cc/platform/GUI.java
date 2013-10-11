@@ -10,6 +10,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import edu.columbia.cc.user.User;
 import edu.columbia.cc.user.VirtualMachine;
@@ -23,6 +24,7 @@ public class GUI extends Frame implements WindowListener, ActionListener{
 	private static final long serialVersionUID = 1L;
 	public static Button createButton;
 	public static Button deleteButton;
+	public static Button relaunchButton;
 	
 	List<User> users = new ArrayList<User>();
 	Spawner chef = Spawner.INSTANCE;
@@ -43,14 +45,18 @@ public class GUI extends Frame implements WindowListener, ActionListener{
 		addWindowListener(this);
 		setBackground(Color.GRAY);
 		
-		createButton = new Button("Create Users");
+		createButton = new Button("Create Instances");
     	createButton.addActionListener(this);
     	
-    	deleteButton = new Button("Delete users");
+    	deleteButton = new Button("Delete Instances");
     	deleteButton.addActionListener(this);
+    	
+    	relaunchButton = new Button("Relaunch Instances");
+    	relaunchButton.addActionListener(this);
     	
     	add(createButton);
     	add(deleteButton);
+    	add(relaunchButton);
     	
     	pack();
 	}
@@ -74,19 +80,51 @@ public class GUI extends Frame implements WindowListener, ActionListener{
 		
 	}
 	
-	public void createUsers() throws Exception
+	public void createUsers()
 	{
-		setUp();
-		
-		for (User temp : users) {
-			chef.commissionVM(temp);
+		try {
+			setUp();
+			
+			for (User temp : users) {
+				chef.commissionVM(temp);
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
-	public void deleteUsers() throws Exception
+	public void deleteUsers()
 	{
-		chef.deleteAll();
+		try {
+			chef.deleteAll();
 //		chef.shutdown();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void updateUsers()
+	{
+		try {
+			chef.relaunchAll();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -140,6 +178,10 @@ public class GUI extends Frame implements WindowListener, ActionListener{
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+		}
+		else if (arg0.getSource() == relaunchButton)
+		{
+			updateUsers();
 		}
 		
 	}
