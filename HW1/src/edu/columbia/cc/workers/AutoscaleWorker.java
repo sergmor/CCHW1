@@ -36,9 +36,10 @@ import edu.columbia.cc.user.User;
 
 public class AutoscaleWorker {
 	
-	private static final double UP_THRESHOLD=85;
+	private static final double UP_THRESHOLD=50;
 	private static final double DOWN_THRESHOLD=20;
-	private static final int PERIOD=120;
+	private static final int PERIOD=60;
+	private String stop = "arn:aws:automate:us-east-1:ec2:stop";
 	AmazonAutoScalingClient autoScaling = null;
 	AmazonCloudWatchClient cloudWatch = null;
 	
@@ -73,7 +74,7 @@ System.out.println("About to create LaunchConf");
 															.withAvailabilityZones(cUser.getVm().getZone())
 															.withLoadBalancerNames(cUser.getUserid()+"-lb")
 															.withMaxSize(2)
-															.withMinSize(0);														;
+															.withMinSize(1);														;
 			
 System.out.println("About to create groupRequest");
 			autoScaling.createAutoScalingGroup(groupRequest);
@@ -96,35 +97,60 @@ System.out.println(downReturn.getPolicyARN());
 
 			//Create the alarms that will use the policies
 			PutMetricAlarmRequest upAlarm = new PutMetricAlarmRequest()
-												.withAlarmName("AddCapacity" + "-" + cUser.getUserid())
+												.withAlarmName("AddCapacity")
 												.withMetricName("CPUUtilization")
 												.withNamespace("AWS/EC2")
 												.withStatistic("Average")
 												.withPeriod(PERIOD)
 												.withThreshold(UP_THRESHOLD)
 												.withComparisonOperator("GreaterThanOrEqualToThreshold")
-												.withDimensions(new Dimension().withName("AutoScalingGroupName=").withValue(cUser.getUserid()))
-												.withEvaluationPeriods(1)												
+												.withDimensions(new Dimension().withName("AutoScalingGroupName=")
+																	.withValue(cUser.getUserid())
+																	.withName("InstanceId").withValue(cUser.getVm().getInstanceId()))															.withEvaluationPeriods(2)												
 												.withActionsEnabled(true)
 												.withAlarmActions(upReturn.getPolicyARN());
 System.out.println("Will try to create alarm : " + upAlarm.getAlarmName());
 			cloudWatch.putMetricAlarm(upAlarm);
 			
 			PutMetricAlarmRequest downAlarm = new PutMetricAlarmRequest()
-												.withAlarmName("RemoveCapacity" + "-" + cUser.getUserid())
+												.withAlarmName("RemoveCapacity")
 												.withMetricName("CPUUtilization")
 												.withNamespace("AWS/EC2")
 												.withStatistic("Average")
 												.withPeriod(PERIOD)
 												.withThreshold(DOWN_THRESHOLD)
 												.withComparisonOperator("LessThanOrEqualToThreshold")
-												.withDimensions(new Dimension().withName("AutoScalingGroupName=").withValue(cUser.getUserid()))
-												.withEvaluationPeriods(1)												
+												.withDimensions(new Dimension().withName("AutoScalingGroupName=")
+																	.withValue(cUser.getUserid())
+																	.withName("InstanceId").withValue(cUser.getVm().getInstanceId()))
+												.withEvaluationPeriods(2)												
 												.withActionsEnabled(true)
 												.withAlarmActions(downReturn.getPolicyARN());
 			
 System.out.println("Will try to create alarm : " + downAlarm.getAlarmName());
 			cloudWatch.putMetricAlarm(downAlarm);
+			
+			List<String> actions = new ArrayList<String>();
+			actions.add(stop);
+			
+			ArrayList<Dimension> dimensions = new ArrayList<Dimension>();
+			dimensions.add(new Dimension().withName("InstanceId").withValue(cUser.getVm().getInstanceId()));
+			
+			
+			PutMetricAlarmRequest defaultAlarm = new PutMetricAlarmRequest()
+													.withNamespace("AWS/EC2")
+													.withMetricName("CPUUtilization")
+													.withDimensions(dimensions)
+													.withPeriod(300)
+													.withStatistic("Average")
+													.withAlarmName("Stop-EZ2-Instance")
+													.withComparisonOperator("LessThanThreshold")
+													.withThreshold(10.0)
+													.withEvaluationPeriods(1)												
+													.withActionsEnabled(true)
+													.withAlarmActions(actions);
+			System.out.println("Will try to create alarm");
+			cloudWatch.putMetricAlarm(defaultAlarm);
 		} catch (AmazonServiceException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -159,7 +185,7 @@ System.out.println("Will try to create alarm : " + downAlarm.getAlarmName());
 													.withAvailabilityZones(cUser.getVm().getZone());
 	System.out.println("Trying to create LB");											
 		CreateLoadBalancerResult newLoadBalancer =  amazonElasticLoadBalancingClient.createLoadBalancer(balancerRequest);	
-		
+		System.out.println("Created " + newLoadBalancer.getDNSName());	
 		return lbName = cUser.getUserid()+"-lb";
 	}
 	
