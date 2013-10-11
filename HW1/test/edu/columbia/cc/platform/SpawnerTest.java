@@ -3,8 +3,6 @@
  */
 package edu.columbia.cc.platform;
 
-import static org.junit.Assert.fail;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -48,8 +46,8 @@ public class SpawnerTest {
 	 */
 	@After
 	public void tearDown() throws Exception {
-		chef.deleteAll();
-		//chef.shutdown();
+		//chef.deleteAll();
+		chef.shutdown();
 	}
 
 	/**

@@ -60,10 +60,10 @@ public enum Spawner {
 	
 	public void updateVM(User cUser) {
 		VMWorker vmWorker = new VMWorker();
-		vmWorker.setCommand(Action.UPDATE);
+		vmWorker.setCommand(Action.RELAUNCH);
 		vmWorker.setUser(cUser);
 		Future<User> nUser = chief.submit(vmWorker);		
-		String id = Long.toString(cUser.getId()) +":"+ Action.UPDATE.toString();
+		String id = Long.toString(cUser.getId()) +":"+ Action.RELAUNCH.toString();
 		usersInProgress.put(id, nUser);	
 	}
 	
