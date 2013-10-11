@@ -5,6 +5,8 @@ import java.util.concurrent.Callable;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.s3.AmazonS3Client;
 
@@ -19,8 +21,9 @@ public class VMWorker implements Callable<User> {
 	private EbsWorker ebs = null;
 	private AmazonEC2Client cloud = null;
 	private AmazonS3Client s3 = null;
-	
-	private static AutoscaleWorker aw = new AutoscaleWorker();
+	private AmazonAutoScalingClient autoScaling = null;
+	private AmazonCloudWatchClient cloudWatch = null;
+	private AutoscaleWorker aw = null;
 	
 	public VMWorker() {}
 	
@@ -49,12 +52,17 @@ public class VMWorker implements Callable<User> {
 		AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
 		this.cloud  = new AmazonEC2Client(credentialsProvider);
 		this.s3 = new AmazonS3Client(credentialsProvider);
+		this.autoScaling = new AmazonAutoScalingClient(credentialsProvider);
+		this.cloudWatch = new AmazonCloudWatchClient(credentialsProvider);
 		
 		this.ec2 = new Ec2Worker()
 						.withUser(user)
 						.withCloud(cloud)
 						.withS3(s3);
-
+		
+		this.aw = new AutoscaleWorker().withAutoscale(autoScaling)
+										.withCloudWatch(cloudWatch);
+		
 		User tempUser = null;
 		System.out.println("Credentials : " + credentialsProvider.toString() );
 		try

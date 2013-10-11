@@ -39,15 +39,23 @@ public class AutoscaleWorker {
 	private static final double UP_THRESHOLD=85;
 	private static final double DOWN_THRESHOLD=20;
 	private static final int PERIOD=120;
+	AmazonAutoScalingClient autoScaling = null;
+	AmazonCloudWatchClient cloudWatch = null;
 	
+	public AutoscaleWorker withAutoscale(AmazonAutoScalingClient client) {
+		this.autoScaling=client;
+		return this;
+	}
+	
+	public AutoscaleWorker withCloudWatch(AmazonCloudWatchClient client) {
+		this.cloudWatch = client;
+		return this;
+	}
 
 	public void setupAutoScale(User cUser)
 	{
 		try {
-			//Create credentials & clients
-			AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
-			AmazonAutoScalingClient autoScaling = new AmazonAutoScalingClient(credentialsProvider);
-			AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient(credentialsProvider);
+		
 			
 			//We will create a launch configuration and group per user
 			CreateLaunchConfigurationRequest confRequest = new CreateLaunchConfigurationRequest()
@@ -160,9 +168,8 @@ System.out.println("Will try to create alarm : " + downAlarm.getAlarmName());
 	{
 		
 		try {
-			AWSCredentialsProvider credentialsProvider = new ClasspathPropertiesFileCredentialsProvider();
-			AmazonAutoScalingClient autoScaling = new AmazonAutoScalingClient(credentialsProvider);
-			AmazonCloudWatchClient cloudWatch = new AmazonCloudWatchClient(credentialsProvider);
+			
+			
 			
 				System.out.println("Connected for user : " + cUser.getUserid());
 				
