@@ -25,7 +25,7 @@ public class SpawnerTest {
 	@Before
 	public void setUp() throws Exception {
 		
-		for(int i=0; i<5; i++) {
+		for(int i=0; i<2; i++) {
 			User temp = new User();
 			long id = System.currentTimeMillis();
 			id += i*100;

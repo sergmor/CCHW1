@@ -50,7 +50,9 @@ public class AutoscaleWorker {
 														.withAvailabilityZones(cUser.getVm().getZone())
 														.withLoadBalancerNames(cUser.getUserid()+"-lb")
 														.withMaxSize(2)
-														.withMinSize(1);
+														.withMinSize(0)
+														.withDesiredCapacity(0);
+		
 	System.out.println("About to create groupRequest");
 		autoScaling.createAutoScalingGroup(groupRequest);
 		PutScalingPolicyRequest upPolicy = new PutScalingPolicyRequest()
@@ -72,7 +74,7 @@ public class AutoscaleWorker {
 	
 		//Create the alarms that will use the policies
 		PutMetricAlarmRequest upAlarm = new PutMetricAlarmRequest()
-											.withAlarmName("AddCapacity")
+											.withAlarmName("AddCapacity" + "-" + cUser.getUserid())
 											.withMetricName("CPUUtilization")
 											.withNamespace("AWS/EC2")
 											.withStatistic("Average")
@@ -87,7 +89,7 @@ public class AutoscaleWorker {
 		cloudWatch.putMetricAlarm(upAlarm);
 		
 		PutMetricAlarmRequest downAlarm = new PutMetricAlarmRequest()
-											.withAlarmName("RemoveCapacity")
+											.withAlarmName("RemoveCapacity" + "-" + cUser.getUserid())
 											.withMetricName("CPUUtilization")
 											.withNamespace("AWS/EC2")
 											.withStatistic("Average")

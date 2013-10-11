@@ -128,7 +128,7 @@ public class Ec2Worker
 	{
 		try
 		{
-			System.out.println("Trying to create volume ...");
+			System.out.println("Trying to create volume for user "+ this.user.getUserid() +" ...");
 			CreateVolumeRequest createVolumeRequest = new CreateVolumeRequest()
 							.withAvailabilityZone(user.getVm().getZone())
 							.withSize(1)
@@ -137,18 +137,25 @@ public class Ec2Worker
 			System.out.println("Request completed.");
 			
 			String volumeId = createVolumeResult.getVolume().getVolumeId();
-			System.out.println("Created volume with ID: " + volumeId);
+			System.out.println("Created volume with ID: " + volumeId + " for user '" + this.user.getUserid() + "'");
 			this.user.getVm().setExtraVolumeId(volumeId);
 			
 			String instanceId = this.user.getVm().getInstanceId();
-			System.out.println("Trying to attach volume to instance with instanceId: " + instanceId);
+			try {
+				System.out.println("Sleeping for 15s before attaching extra volume " + volumeId);
+				Thread.sleep(15 * 1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println("Trying to attach volume to instance with instanceId: " + instanceId + " for user '" + this.user.getUserid() + "'");
 			AttachVolumeRequest attachVolumeRequest = new AttachVolumeRequest();
 			attachVolumeRequest.setVolumeId(volumeId);
 			attachVolumeRequest.setInstanceId(instanceId);
 			attachVolumeRequest.setDevice("/dev/sdf");
 			this.cloud.attachVolume(attachVolumeRequest);
 			
-			System.out.println("Successfully attached.");
+			System.out.println("Successfully attached volume " + volumeId + " to instance " + instanceId + " for user " + this.user.getUserid());
 		}
 		catch (AmazonServiceException e)
 		{
@@ -224,14 +231,14 @@ public class Ec2Worker
 			String instanceId = this.user.getVm().getInstanceId();
 			String extraVolumeId = this.user.getVm().getExtraVolumeId();
 			
-			System.out.println("Trying to attach volume to instance with instanceId: " + instanceId);
+			System.out.println("Trying to attach volume to instance with instanceId: " + instanceId + " for user " + this.user.getUserid());
 			AttachVolumeRequest attachVolumeRequest = new AttachVolumeRequest();
 			attachVolumeRequest.setVolumeId(extraVolumeId);
 			attachVolumeRequest.setInstanceId(instanceId);
 			attachVolumeRequest.setDevice("/dev/sdf");
 			this.cloud.attachVolume(attachVolumeRequest);
 			
-			System.out.println("Successfully attached.");
+			System.out.println("Successfully attached volume " + extraVolumeId + " to instance " + instanceId +" for user " + this.user.getUserid());
 		}
 		catch (AmazonServiceException e)
 		{
@@ -469,13 +476,13 @@ public class Ec2Worker
 			String instanceId = this.user.getVm().getInstanceId();
 			System.out.println("Elastic IP received in response : " + elasticIp);
 			
-			System.out.println("Trying to associate elastic IP '" + elasticIp + "' with instanceId '" + instanceId + "'");
+			System.out.println("Trying to associate elastic IP '" + elasticIp + "' with instanceId '" + instanceId + "' for user '" + this.user.getUserid() + "'");
 			AssociateAddressRequest associateAddressRequest = new AssociateAddressRequest(instanceId, elasticIp);
 			this.cloud.associateAddress(associateAddressRequest);
 			System.out.println("Request sent.");
 			
 			this.user.setElasticIp(elasticIp);
-			System.out.println("Saved the elastic IP with the User.");
+			System.out.println("Saved the elastic IP with the User : '" + this.user.getUserid() + "'");
 		}
 		catch (AmazonServiceException e)
 		{
@@ -650,7 +657,7 @@ public class Ec2Worker
                 System.out.println("exit-status: "+channel.getExitStatus());
                 break;
               }
-              try{Thread.sleep(1000);}catch(Exception ee){}
+              try{Thread.sleep(1000);}catch(Exception ee){ee.printStackTrace();}
             }
             channel.disconnect();
             session.disconnect();

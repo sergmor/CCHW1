@@ -20,6 +20,8 @@ public class VMWorker implements Callable<User> {
 	private AmazonEC2Client cloud = null;
 	private AmazonS3Client s3 = null;
 	
+	private static AutoscaleWorker aw = new AutoscaleWorker();
+	
 	public VMWorker() {}
 	
 	public User getUser() {
@@ -38,7 +40,7 @@ public class VMWorker implements Callable<User> {
 		this.command = command;
 	}
 
-	public void checkCommand() throws InterruptedException, IOException
+	public void checkCommand()
 	{
 		/*AWSCredentials awsCredentials = new PropertiesCredentials(
    			 this.getClass().getResourceAsStream("AwsCredentials.properties"));
@@ -54,20 +56,34 @@ public class VMWorker implements Callable<User> {
 						.withS3(s3);
 
 		User tempUser = null;
-		System.out.println("Trying to create VM with credentials" + credentialsProvider.toString() );
-		if(command.equals(Action.CREATE))
+		System.out.println("Credentials" + credentialsProvider.toString() );
+		try
 		{
-			System.out.println("attempting to create VM");
-			tempUser = ec2.processCreateRequest();
-			
+			if(command.equals(Action.CREATE))
+			{
+				System.out.println("attempting to create VM");
+				tempUser = ec2.processCreateRequest();
+				
+				aw.createLoadBalancer(tempUser);
+				aw.setupAutoScale(tempUser);
+				
+			}
+			else if (command.equals(Action.RELAUNCH))
+			{
+				tempUser = ec2.processRelaunchRequest();
+				
+				aw.createLoadBalancer(tempUser);
+				aw.setupAutoScale(tempUser);
+			}
+			else if(command.equals(Action.DELETE))
+			{
+				System.out.println("attempting to delete VM");
+				tempUser = ec2.processDeleteRequest();
+			}
 		}
-		else if (command.equals(Action.RELAUNCH))
+		catch (IOException e)
 		{
-			tempUser = ec2.processRelaunchRequest();
-		}
-		else if(command.equals(Action.DELETE))
-		{
-			tempUser = ec2.processDeleteRequest();
+			e.printStackTrace();
 		}
 	}
 
