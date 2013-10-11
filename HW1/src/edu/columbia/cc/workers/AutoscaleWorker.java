@@ -74,7 +74,7 @@ System.out.println("About to create LaunchConf");
 															.withAvailabilityZones(cUser.getVm().getZone())
 															.withLoadBalancerNames(cUser.getUserid()+"-lb")
 															.withMaxSize(2)
-															.withMinSize(1);														;
+															.withMinSize(0);														;
 			
 System.out.println("About to create groupRequest");
 			autoScaling.createAutoScalingGroup(groupRequest);
@@ -97,7 +97,7 @@ System.out.println(downReturn.getPolicyARN());
 
 			//Create the alarms that will use the policies
 			PutMetricAlarmRequest upAlarm = new PutMetricAlarmRequest()
-												.withAlarmName("AddCapacity")
+												.withAlarmName("AddCapacity-" +cUser.getUserid())
 												.withMetricName("CPUUtilization")
 												.withNamespace("AWS/EC2")
 												.withStatistic("Average")
@@ -113,7 +113,7 @@ System.out.println("Will try to create alarm : " + upAlarm.getAlarmName());
 			cloudWatch.putMetricAlarm(upAlarm);
 			
 			PutMetricAlarmRequest downAlarm = new PutMetricAlarmRequest()
-												.withAlarmName("RemoveCapacity")
+												.withAlarmName("RemoveCapacity-" +cUser.getUserid())
 												.withMetricName("CPUUtilization")
 												.withNamespace("AWS/EC2")
 												.withStatistic("Average")
@@ -143,7 +143,7 @@ System.out.println("Will try to create alarm : " + downAlarm.getAlarmName());
 													.withDimensions(dimensions)
 													.withPeriod(300)
 													.withStatistic("Average")
-													.withAlarmName("Stop-EZ2-Instance")
+													.withAlarmName("Stop-EZ2-Instance-"+cUser.getUserid())
 													.withComparisonOperator("LessThanThreshold")
 													.withThreshold(10.0)
 													.withEvaluationPeriods(1)												
