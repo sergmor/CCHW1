@@ -13,12 +13,13 @@ public class Heartbeat implements Runnable {
 
 	
 	
-	private Map<String,Future<User>> usersInProgress = new HashMap<String, Future<User>>();
+	private Map<String,Future<User>> usersInProgress;
 	
 	private Map<String,User> usersFinished= new HashMap<String, User>();
 	
 	@Override
 	public void run() {
+		this.usersInProgress = Spawner.INSTANCE.getUsersInProgress();		
 		Set<String> keys = usersInProgress.keySet();
 		for (Iterator<String> iterator = keys.iterator(); iterator.hasNext();) {
 			String id = iterator.next();
@@ -34,13 +35,9 @@ public class Heartbeat implements Runnable {
 			
 			}
 		}
-		checkCPU();
+		Spawner.INSTANCE.updateUser(usersFinished);
 
-	}
 
-	private void checkCPU() {
-		// Poll all metrics and callback to Spawner
-		
 	}
 
 	public Map<String, Future<User>> getUsersInProgress() {

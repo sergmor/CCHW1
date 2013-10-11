@@ -28,7 +28,7 @@ public enum Spawner {
 	private static final int timeout = 2;
 	private ExecutorService chief = Executors.newFixedThreadPool(N_WORKERS);
 	private ScheduledExecutorService beat = Executors.newScheduledThreadPool(1);
-	private Map<Long,User> users = new HashMap<Long, User>(); 
+	private Map<String,User> users = new HashMap<String, User>(); 
 	private Map<String,Future<User>> usersInProgress = new HashMap<String, Future<User>>();
 	
 	
@@ -44,7 +44,7 @@ public enum Spawner {
 		vmWorker.setCommand(Action.CREATE);
 		vmWorker.setUser(cUser);
 		Future<User> nUser = chief.submit(vmWorker);
-		String id = Long.toString(cUser.getId()) +":"+ Action.CREATE.toString();
+		String id = cUser.getUserid() +":"+ Action.CREATE.toString();
 		usersInProgress.put(id, nUser);
 		
 	}
@@ -54,7 +54,7 @@ public enum Spawner {
 		vmWorker.setCommand(Action.DELETE);
 		vmWorker.setUser(cUser);
 		Future<User> nUser = chief.submit(vmWorker);		
-		String id = Long.toString(cUser.getId()) +":"+ Action.DELETE.toString();
+		String id = cUser.getUserid() +":"+ Action.DELETE.toString();
 		usersInProgress.put(id, nUser);		
 	}
 	
@@ -63,7 +63,7 @@ public enum Spawner {
 		vmWorker.setCommand(Action.RELAUNCH);
 		vmWorker.setUser(cUser);
 		Future<User> nUser = chief.submit(vmWorker);		
-		String id = Long.toString(cUser.getId()) +":"+ Action.RELAUNCH.toString();
+		String id = cUser.getId() +":"+ Action.RELAUNCH.toString();
 		usersInProgress.put(id, nUser);	
 	}
 	
@@ -86,24 +86,22 @@ public enum Spawner {
 		beat.scheduleWithFixedDelay(new Heartbeat(), 1, 1, TimeUnit.MINUTES);
 	}
 	
-	public void updateUser(List<User> processed) {
+	public void updateUser(Map<String,User> processed) {
 		
-		for (User user : processed) {
-			Set<String> keys = usersInProgress.keySet();
-			for (Iterator<String> iterator = keys.iterator(); iterator.hasNext();) {
-				String id = iterator.next();
-				if(usersInProgress.containsKey(id)) {
-					usersInProgress.remove(id);
-					if(id.contains(Action.CREATE.toString())) {
-						users.put(user.getId(), user);
-					}
-					else if (id.contains(Action.DELETE.toString())) {
-						users.remove(id);
-					}
+		Set<String> keys = processed.keySet();
+		for (Iterator<String> iterator = keys.iterator(); iterator.hasNext();) {
+			String id = iterator.next();
+			if(usersInProgress.containsKey(id)) {
+				User user = processed.get(id);
+				if(id.contains(Action.CREATE.toString())) {
+					users.put(user.getUserid(), user);
+					System.out.println("***Spawner: Created final User" + user.getUserid());
 				}
+				else if (id.contains(Action.DELETE.toString())) {
+					//users.remove(user.getUserid());
+				}
+				usersInProgress.remove(id);
 			}
-			
-			
 		}
 	}
 	
@@ -114,10 +112,23 @@ public enum Spawner {
 	}
 	
 	public void deleteAll() throws InterruptedException, ExecutionException {
-		Set<String> keys = usersInProgress.keySet();
+		Set<String> keys = users.keySet();
 		for (Iterator<String> iterator = keys.iterator(); iterator.hasNext();) {
 			String id = iterator.next();
 			this.decommissionVM(users.get(id));
+		}
+		Set<String> keysInProgress = usersInProgress.keySet();
+		for (Iterator<String> iterator = keysInProgress.iterator(); iterator.hasNext();) {
+			String id = iterator.next();
+			this.decommissionVM(users.get(id));
+		}
+	}
+	
+	public void relaunchAll() throws InterruptedException, ExecutionException {
+		Set<String> keys = users.keySet();
+		for (Iterator<String> iterator = keys.iterator(); iterator.hasNext();) {
+			String id = iterator.next();
+			this.updateVM(users.get(id));
 		}
 	}
 	
