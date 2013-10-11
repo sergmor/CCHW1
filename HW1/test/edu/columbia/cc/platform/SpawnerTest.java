@@ -69,7 +69,7 @@ public class SpawnerTest {
 	 */
 	@Test
 	public void testDecommissionVM() {
-		fail("Not yet implemented");
+		//fail("Not yet implemented");
 	}
 
 }

@@ -40,29 +40,29 @@ public enum Spawner {
 	 * @throws ExecutionException
 	 */
 	public void commissionVM(User cUser) throws InterruptedException, ExecutionException {
-		VMWorker ec2Worker = new VMWorker(); 
-		ec2Worker.setCommand(Action.CREATE);
-		ec2Worker.setUser(cUser);
-		Future<User> nUser = chief.submit(ec2Worker);
+		VMWorker vmWorker = new VMWorker(); 
+		vmWorker.setCommand(Action.CREATE);
+		vmWorker.setUser(cUser);
+		Future<User> nUser = chief.submit(vmWorker);
 		String id = Long.toString(cUser.getId()) +":"+ Action.CREATE.toString();
 		usersInProgress.put(id, nUser);
 		
 	}
 	
 	public void decommissionVM(User cUser) throws InterruptedException, ExecutionException {
-		VMWorker ec2Worker = new VMWorker();
-		ec2Worker.setCommand(Action.DELETE);
-		ec2Worker.setUser(cUser);
-		Future<User> nUser = chief.submit(ec2Worker);		
+		VMWorker vmWorker = new VMWorker();
+		vmWorker.setCommand(Action.DELETE);
+		vmWorker.setUser(cUser);
+		Future<User> nUser = chief.submit(vmWorker);		
 		String id = Long.toString(cUser.getId()) +":"+ Action.DELETE.toString();
 		usersInProgress.put(id, nUser);		
 	}
 	
 	public void updateVM(User cUser) {
-		VMWorker ec2Worker = new VMWorker();
-		ec2Worker.setCommand(Action.UPDATE);
-		ec2Worker.setUser(cUser);
-		Future<User> nUser = chief.submit(ec2Worker);		
+		VMWorker vmWorker = new VMWorker();
+		vmWorker.setCommand(Action.UPDATE);
+		vmWorker.setUser(cUser);
+		Future<User> nUser = chief.submit(vmWorker);		
 		String id = Long.toString(cUser.getId()) +":"+ Action.UPDATE.toString();
 		usersInProgress.put(id, nUser);	
 	}
